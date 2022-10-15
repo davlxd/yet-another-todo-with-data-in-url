@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Todo</title>
+  </head>
+  <body style="padding: 2em; font-size: 1.2em; line-height: 130%">
+    <div id="root" style="display: flex; flex-direction: column"></div>
+    <script>
+      let data = {
+        // default data
+        _: { t: "Example list" },
+        d: [
+          { c: 1, t: "example entry 1" },
+          {
+            c: 0,
+            t: "example entry 2",
+            d: [
+              {
+                c: 0,
+                t: "example sub entry 1",
+                d: [{ c: 0, t: "example sub sub entry 1" }],
+              },
+              {
+                c: 0,
+                t: "example sub entry 2",
+              },
+            ],
+          },
+        ],
+      };
+
+      // Base64 data, save to URL
+      function serializeData() {
+        window.history.pushState({}, "", "/" + btoa(JSON.stringify(data)));
+      }
+
+      function checkboxClickedHandler(value, ...indices) {
+        let target = data;
+        for (const i of indices) {
+          target = target.d[i];
+        }
+        target.c = value ? 1 : 0;
+        serializeData();
+      }
+
+      // Initial load, take base64 data form URL, parse and assign to global data
+      // If none, do nothing, leave default data value intact
+      // Then invoke initialRender
+      function initLoadFromUrl() {
+        const b64 = window.location.pathname.substring(1);
+        if (b64) {
+          try {
+            data = JSON.parse(atob(b64));
+          } catch (e) {
+            console.error("Unable to load data", e);
+            return;
+          }
+        }
+        initialRender();
+      }
+
+      // Resursive function to render todo list and children
+      function listRender(list = [], ...parentIndices) {
+        for (let i = 0; i < list.length; i++) {
+          entry = list[i];
+          const listEntryElement = document.createElement("div");
+          listEntryElement.classList.add("list-entry");
+          listEntryElement.style = `padding-left: ${parentIndices.length}em`;
+
+          var checkboxElement = document.createElement("input");
+          checkboxElement.type = "checkbox";
+          checkboxElement.checked = entry.c === 1;
+          checkboxElement.classList.add("checkbox");
+          checkboxElement.addEventListener("change", (event) => {
+            checkboxClickedHandler(event.target.checked, ...parentIndices, i);
+          });
+
+          listEntryElement.appendChild(checkboxElement);
+          listEntryElement.appendChild(document.createTextNode(entry.t));
+          document.getElementById("root").appendChild(listEntryElement);
+
+          listRender(entry.d, ...parentIndices, i);
+        }
+      }
+
+      // render data to DOM elements, run only once initially
+      function initialRender() {
+        // render title
+        listRender(data.d);
+        // render plus button
+      }
+
+      initLoadFromUrl();
+    </script>
+    <style>
+      .list-entry {
+        display: flex;
+      }
+      .checkbox {
+        margin-right: 0.5em;
+      }
+    </style>
+  </body>
+</html>
