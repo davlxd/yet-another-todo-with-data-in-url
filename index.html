@@ -4,11 +4,40 @@
     <meta charset="utf-8" />
     <title>Todo</title>
   </head>
-  <body style="padding: 2em; font-size: 1.2em; line-height: 130%">
+  <body>
     <div id="root" style="display: flex; flex-direction: column"></div>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      // This script checks to see if a redirect is present in the query string,
+      // converts it back into the correct url and adds it to the
+      // browser's history using window.history.replaceState(...),
+      // which won't cause the browser to attempt to load the new url.
+      // When the single page app is loaded further down in this file,
+      // the correct url will be waiting in the browser's history for
+      // the single page app to route accordingly.
+      (function (l) {
+        if (l.search[1] === "/") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (s) {
+              return s.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(
+            null,
+            null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      })(window.location);
+    </script>
     <script>
+      // default data
       let data = {
-        // default data
+        t: "Example",
         _: { t: "Example list" },
         d: [
           { c: 1, t: "example entry 1" },
@@ -31,7 +60,8 @@
       };
 
       // Base64 data, save to URL
-      function serializeData() {
+      function serializeData(title) {
+        document.title = "Todo - " + title;
         window.history.pushState({}, "", "/" + btoa(JSON.stringify(data)));
       }
 
@@ -41,7 +71,215 @@
           target = target.d[i];
         }
         target.c = value ? 1 : 0;
-        serializeData();
+
+        serializeData(`${value ? "Tick" : "Untick"} "${target.t}"`);
+        rerenderList();
+      }
+
+      function itemTitleBluredHandler(value, ...indices) {
+        let target = data;
+        for (const i of indices) {
+          target = target.d[i];
+        }
+        if (target.t === value) {
+          return;
+        }
+        target.t = value;
+
+        serializeData(`Update "${target.t}"`);
+        rerenderList();
+      }
+
+      function addChildButtonHandler(...indices) {
+        let target = data;
+        for (const i of indices) {
+          target = target.d[i];
+        }
+
+        target.d = (target.d || []).concat([{ c: 0, t: "__" }]);
+
+        serializeData(`Added`);
+        rerenderList();
+      }
+
+      function itemDelete(...indices) {
+        let container = data;
+        for (const i of indices.slice(0, indices.length - 1)) {
+          container = container.d[i];
+        }
+        const targetIndex = indices[indices.length - 1];
+        const target = container.d[targetIndex];
+
+        container.d = [
+          ...container.d.slice(0, targetIndex),
+          ...(target.d || []),
+          ...container.d.slice(targetIndex + 1),
+        ];
+        if (container.d.length === 0) {
+          delete container.d;
+        }
+
+        return target;
+      }
+
+      function itemDeleteHandler(...indices) {
+        const target = itemDelete(...indices);
+
+        serializeData(`Delete "${target.t}"`);
+        rerenderList();
+      }
+
+      function itemBeingDroppedHandler(sourceIndicesStr, ...indices) {
+        let target = data;
+        for (const i of indices) {
+          target = target.d[i];
+        }
+        target.target = true; // mark target
+
+        const sourceIndicies = sourceIndicesStr
+          .split(",")
+          .map((i) => parseInt(i));
+        const dragged = itemDelete(...sourceIndicies);
+        delete dragged.d;
+
+        function findTarget(list, ...indices) {
+          if (list.target) {
+            return [indices, list];
+          }
+          const children = list.d || [];
+          for (let i = 0; i < children.length; i++) {
+            const ret = findTarget(children[i], ...indices, i);
+            if (ret) {
+              return ret;
+            }
+          }
+        }
+        [targetIndices, target] = findTarget(data);
+        delete target.target;
+
+        if (target.d) {
+          target.d = [dragged, ...target.d];
+        } else {
+          const targetIndex = targetIndices[targetIndices.length - 1];
+          let container = data;
+          for (const i of targetIndices.slice(0, targetIndices.length - 1)) {
+            container = container.d[i];
+          }
+          container.d = [
+            ...container.d.slice(0, targetIndex + 1),
+            dragged,
+            ...container.d.slice(targetIndex + 1),
+          ];
+        }
+
+        serializeData(`Dragged "${dragged.t}"`);
+        rerenderList();
+      }
+
+      function renderTodoTitle() {
+        const titleEL = document.createElement("div");
+        titleEL.contentEditable = true;
+        titleEL.textContent = data.t;
+        titleEL.classList.add("todotitle");
+        titleEL.addEventListener("blur", (event) => {
+          itemTitleBluredHandler(event.target.textContent);
+        });
+        document.getElementById("root").appendChild(titleEL);
+      }
+
+      // Resursive function to render todo list and children
+      function renderList(list = [], ...parentIndices) {
+        for (let i = 0; i < list.length; i++) {
+          entry = list[i];
+          const itemEl = document.createElement("div");
+          itemEl.classList.add("list-entry");
+          itemEl.style = `padding-left: ${
+            parentIndices.length * 2
+          }em; margin-top: ${2 / Math.pow(2, parentIndices.length + 1)}em;`;
+
+          const dragEl = document.createElement("span");
+          dragEl.classList.add("dragIcon");
+          dragEl.setAttribute("draggable", "true");
+          dragEl.textContent = "≣";
+          dragEl.addEventListener("dragstart", (event) => {
+            event.dataTransfer.setData("text", [...parentIndices, i].join());
+          });
+
+          const checkboxEl = document.createElement("input");
+          checkboxEl.type = "checkbox";
+          checkboxEl.checked = entry.c === 1;
+          checkboxEl.style = `opacity: ${entry.c === 1 ? 0.4 : 1}`;
+          checkboxEl.classList.add("checkbox");
+          checkboxEl.addEventListener("change", (event) => {
+            checkboxClickedHandler(event.target.checked, ...parentIndices, i);
+          });
+
+          const titleEL = document.createElement("div");
+          titleEL.contentEditable = true;
+          titleEL.textContent = entry.t;
+          titleEL.style = `opacity: ${entry.c === 1 ? 0.4 : 1}`;
+          titleEL.addEventListener("blur", (event) => {
+            itemTitleBluredHandler(
+              event.target.textContent,
+              ...parentIndices,
+              i
+            );
+          });
+
+          const addChildButtonEl = document.createElement("span");
+          addChildButtonEl.classList.add("addChildButton");
+          addChildButtonEl.textContent = "➕";
+          addChildButtonEl.addEventListener("click", (event) => {
+            addChildButtonHandler(...parentIndices, i);
+          });
+
+          const deleteButtonEl = document.createElement("span");
+          deleteButtonEl.classList.add("deleteButton");
+          deleteButtonEl.textContent = "🗑️";
+          deleteButtonEl.addEventListener("click", (event) => {
+            itemDeleteHandler(...parentIndices, i);
+          });
+
+          itemEl.appendChild(dragEl);
+          itemEl.appendChild(checkboxEl);
+          itemEl.appendChild(titleEL);
+          itemEl.appendChild(addChildButtonEl);
+          itemEl.appendChild(deleteButtonEl);
+          itemEl.addEventListener("drop", (event) => {
+            itemBeingDroppedHandler(
+              event.dataTransfer.getData("text"),
+              ...parentIndices,
+              i
+            );
+          });
+          itemEl.addEventListener("dragover", (event) => {
+            event.preventDefault();
+          });
+
+          document.getElementById("root").appendChild(itemEl);
+
+          renderList(entry.d, ...parentIndices, i);
+        }
+      }
+
+      function renderTopLevelPlusSign() {
+        const topLevelPlusButtonEl = document.createElement("div");
+        topLevelPlusButtonEl.classList.add("topLevelPlusButton");
+        topLevelPlusButtonEl.textContent = "➕";
+        topLevelPlusButtonEl.addEventListener("click", (event) => {
+          addChildButtonHandler();
+        });
+        document.getElementById("root").appendChild(topLevelPlusButtonEl);
+      }
+
+      function rerenderList() {
+        const myNode = document.getElementById("root");
+        while (myNode.firstChild) {
+          myNode.removeChild(myNode.lastChild);
+        }
+        renderTodoTitle();
+        renderList(data.d);
+        renderTopLevelPlusSign();
       }
 
       // Initial load, take base64 data form URL, parse and assign to global data
@@ -57,48 +295,61 @@
             return;
           }
         }
-        initialRender();
-      }
-
-      // Resursive function to render todo list and children
-      function listRender(list = [], ...parentIndices) {
-        for (let i = 0; i < list.length; i++) {
-          entry = list[i];
-          const listEntryElement = document.createElement("div");
-          listEntryElement.classList.add("list-entry");
-          listEntryElement.style = `padding-left: ${parentIndices.length}em`;
-
-          var checkboxElement = document.createElement("input");
-          checkboxElement.type = "checkbox";
-          checkboxElement.checked = entry.c === 1;
-          checkboxElement.classList.add("checkbox");
-          checkboxElement.addEventListener("change", (event) => {
-            checkboxClickedHandler(event.target.checked, ...parentIndices, i);
-          });
-
-          listEntryElement.appendChild(checkboxElement);
-          listEntryElement.appendChild(document.createTextNode(entry.t));
-          document.getElementById("root").appendChild(listEntryElement);
-
-          listRender(entry.d, ...parentIndices, i);
-        }
-      }
-
-      // render data to DOM elements, run only once initially
-      function initialRender() {
-        // render title
-        listRender(data.d);
-        // render plus button
+        rerenderList();
       }
 
       initLoadFromUrl();
     </script>
     <style>
+      body {
+        padding: 2em;
+        font-size: 1.2em;
+        font-family: monospace;
+      }
+      .todotitle {
+        font-size: 1.5em;
+        margin-bottom: 0.5em;
+      }
       .list-entry {
         display: flex;
+        align-items: center;
       }
       .checkbox {
         margin-right: 0.5em;
+      }
+      .addChildButton {
+        margin-left: 1.5em;
+        cursor: pointer;
+        opacity: 0.1;
+      }
+      .addChildButton:hover {
+        opacity: 1;
+      }
+      .dragIcon {
+        margin-right: 0.5em;
+        cursor: grab;
+        opacity: 0.1;
+      }
+      .dragIcon:hover {
+        opacity: 1;
+      }
+      .deleteButton {
+        margin-left: 1em;
+        cursor: pointer;
+        opacity: 0.1;
+      }
+      .deleteButton:hover {
+        opacity: 1;
+      }
+      .topLevelPlusButton {
+        width: 1em;
+        margin-top: 1em;
+        cursor: pointer;
+        font-size: 1.7em;
+        opacity: 0.3;
+      }
+      .topLevelPlusButton:hover {
+        opacity: 1;
       }
     </style>
   </body>
