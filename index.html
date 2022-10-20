@@ -164,6 +164,44 @@
         rerenderList();
       }
 
+      function itemMoveUpHandler(...indices) {
+        const targetIndex = indices[indices.length - 1];
+
+        if (targetIndex === 0) {
+          return;
+        }
+        const target = locateItem(...indices);
+        const parent = locateParent(...indices);
+
+        parent.d = [
+          ...parent.d.slice(0, targetIndex - 1),
+          target,
+          parent.d[targetIndex - 1],
+          ...parent.d.slice(targetIndex + 1),
+        ];
+        serializeData(`Move up "${target.t}"`);
+        rerenderList();
+      }
+
+      function itemMoveDownHandler(...indices) {
+        const targetIndex = indices[indices.length - 1];
+        const parent = locateParent(...indices);
+
+        if (targetIndex === parent.d.length - 1) {
+          return;
+        }
+        const target = locateItem(...indices);
+
+        parent.d = [
+          ...parent.d.slice(0, targetIndex),
+          parent.d[targetIndex + 1],
+          target,
+          ...parent.d.slice(targetIndex + 2),
+        ];
+        serializeData(`Move up "${target.t}"`);
+        rerenderList();
+      }
+
       function itemMoveLeftHandler(...indices) {
         if (indices.length < 2) {
           return;
@@ -267,12 +305,16 @@
           const upButtonEl = document.createElement("span");
           upButtonEl.classList.add("itemButton", "upButton");
           upButtonEl.textContent = "⬆️";
-          upButtonEl.addEventListener("click", (event) => {});
+          upButtonEl.addEventListener("click", (event) => {
+            itemMoveUpHandler(...parentIndices, i);
+          });
 
           const downButtonEl = document.createElement("span");
           downButtonEl.classList.add("itemButton", "downButton");
           downButtonEl.textContent = "⬇️";
-          downButtonEl.addEventListener("click", (event) => {});
+          downButtonEl.addEventListener("click", (event) => {
+            itemMoveDownHandler(...parentIndices, i);
+          });
 
           const leftButtonEl = document.createElement("span");
           leftButtonEl.classList.add("itemButton", "leftButton");
