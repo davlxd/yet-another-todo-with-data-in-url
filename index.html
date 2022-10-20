@@ -66,7 +66,17 @@
       // Base64 data, save to URL
       function serializeData(action) {
         document.title = `${data.t} -  ${action}`;
-        window.history.pushState({}, "", "/" + btoa(JSON.stringify(data)));
+
+        const string = JSON.stringify(data);
+        const codeUnits = new Uint16Array(string.length);
+        for (let i = 0; i < codeUnits.length; i++) {
+          codeUnits[i] = string.charCodeAt(i);
+        }
+        const base64 = btoa(
+          String.fromCharCode(...new Uint8Array(codeUnits.buffer))
+        );
+
+        window.history.pushState({}, "", "/" + base64);
       }
 
       function locateItem(...indices) {
@@ -286,9 +296,14 @@
             );
           });
           titleEL.addEventListener("input", (event) => {
-            if (event.inputType === "insertLineBreak") {
-              titleEL.blur();
-              addNextSiblingHandler(...parentIndices, i);
+            switch (event.inputType) {
+              case "insertParagraph":
+                titleEL.blur();
+                break;
+              case "insertLineBreak": // Shift + Enter triggers this
+                titleEL.blur();
+                addNextSiblingHandler(...parentIndices, i);
+                break;
             }
           });
 
@@ -372,10 +387,19 @@
       // If none, do nothing, leave default data value intact
       // Then invoke initialRender
       function initLoadFromUrl() {
-        const b64 = window.location.pathname.substring(1);
-        if (b64) {
+        const base64 = window.location.pathname.substring(1);
+        if (base64) {
           try {
-            data = JSON.parse(atob(b64));
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < bytes.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            const string = String.fromCharCode(
+              ...new Uint16Array(bytes.buffer)
+            );
+
+            data = JSON.parse(string);
           } catch (e) {
             console.error("Unable to load data", e);
             return;
@@ -385,6 +409,7 @@
       }
 
       initLoadFromUrl();
+      window.onbeforeunload = () => "Sure?";
     </script>
     <style>
       body {
