@@ -112,7 +112,6 @@
 
         container.d = [
           ...container.d.slice(0, targetIndex),
-          ...(target.d || []),
           ...container.d.slice(targetIndex + 1),
         ];
         if (container.d.length === 0) {
