@@ -164,6 +164,24 @@
         rerenderList();
       }
 
+      function itemMoveRightHandler(...indices) {
+        const targetIndex = indices[indices.length - 1];
+        if (targetIndex === 0) {
+          return;
+        }
+        let target = locateItem(...indices);
+
+        const previousSibling = locateItem(
+          ...[...indices.slice(0, indices.length - 1), targetIndex - 1]
+        );
+
+        previousSibling.d = (previousSibling.d || []).concat([target]);
+        itemDelete(...indices);
+
+        serializeData(`Move right "${target.t}"`);
+        rerenderList();
+      }
+
       function renderTodoTitle() {
         const titleEL = document.createElement("div");
         titleEL.contentEditable = true;
@@ -214,23 +232,55 @@
           });
 
           const addChildButtonEl = document.createElement("span");
-          addChildButtonEl.classList.add("addChildButton");
+          addChildButtonEl.classList.add("itemButton", "addChildButton");
           addChildButtonEl.textContent = "➕";
           addChildButtonEl.addEventListener("click", (event) => {
             addChildButtonHandler(...parentIndices, i);
           });
 
           const deleteButtonEl = document.createElement("span");
-          deleteButtonEl.classList.add("deleteButton");
+          deleteButtonEl.classList.add("itemButton", "deleteButton");
           deleteButtonEl.textContent = "🗑️";
           deleteButtonEl.addEventListener("click", (event) => {
             itemDeleteHandler(...parentIndices, i);
+          });
+
+          const upButtonEl = document.createElement("span");
+          upButtonEl.classList.add("itemButton", "upButton");
+          upButtonEl.textContent = "⬆️";
+          upButtonEl.addEventListener("click", (event) => {
+            itemDeleteHandler(...parentIndices, i);
+          });
+
+          const downButtonEl = document.createElement("span");
+          downButtonEl.classList.add("itemButton", "downButton");
+          downButtonEl.textContent = "⬇️";
+          downButtonEl.addEventListener("click", (event) => {
+            itemDeleteHandler(...parentIndices, i);
+          });
+
+          const leftButtonEl = document.createElement("span");
+          leftButtonEl.classList.add("itemButton", "leftButton");
+          leftButtonEl.textContent = "⬅️";
+          leftButtonEl.addEventListener("click", (event) => {
+            itemDeleteHandler(...parentIndices, i);
+          });
+
+          const rightButtonEl = document.createElement("span");
+          rightButtonEl.classList.add("itemButton", "rightButton");
+          rightButtonEl.textContent = "➡️";
+          rightButtonEl.addEventListener("click", (event) => {
+            itemMoveRightHandler(...parentIndices, i);
           });
 
           itemEl.appendChild(checkboxEl);
           itemEl.appendChild(titleEL);
           itemEl.appendChild(addChildButtonEl);
           itemEl.appendChild(deleteButtonEl);
+          itemEl.appendChild(upButtonEl);
+          itemEl.appendChild(downButtonEl);
+          itemEl.appendChild(leftButtonEl);
+          itemEl.appendChild(rightButtonEl);
           document.getElementById("root").appendChild(itemEl);
 
           renderList(entry.d, ...parentIndices, i);
@@ -292,21 +342,31 @@
       .checkbox {
         margin-right: 0.5em;
       }
-      .addChildButton {
-        margin-left: 1.5em;
+      .itemButton {
         cursor: pointer;
         opacity: 0.1;
+        filter: grayscale(100%);
       }
-      .addChildButton:hover {
+      .itemButton:hover {
         opacity: 1;
+      }
+      .addChildButton {
+        margin-left: 1.5em;
       }
       .deleteButton {
         margin-left: 1em;
-        cursor: pointer;
-        opacity: 0.1;
       }
-      .deleteButton:hover {
-        opacity: 1;
+      .upButton {
+        margin-left: 2em;
+      }
+      .downButton {
+        margin-left: 0.5em;
+      }
+      .leftButton {
+        margin-left: 0.5em;
+      }
+      .rightButton {
+        margin-left: 0.5em;
       }
       .topLevelPlusButton {
         width: 1em;
@@ -314,9 +374,6 @@
         cursor: pointer;
         font-size: 1.7em;
         opacity: 0.3;
-      }
-      .topLevelPlusButton:hover {
-        opacity: 1;
       }
     </style>
   </body>
