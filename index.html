@@ -82,7 +82,7 @@
       }
 
       function checkboxClickedHandler(value, ...indices) {
-        let target = locateItem(...indices);
+        const target = locateItem(...indices);
         target.c = value ? 1 : 0;
 
         serializeData(`${value ? "Tick" : "Untick"} "${target.t}"`);
@@ -90,7 +90,7 @@
       }
 
       function itemTitleBluredHandler(value, ...indices) {
-        let target = locateItem(...indices);
+        const target = locateItem(...indices);
         if (target.t === value) {
           return;
         }
@@ -110,7 +110,7 @@
       }
 
       function addChildButtonHandler(...indices) {
-        let target = locateItem(...indices);
+        const target = locateItem(...indices);
         target.d = (target.d || []).concat([{ c: 0, t: "__" }]);
 
         serializeData(`Added`);
@@ -122,7 +122,7 @@
       }
 
       function addNextSiblingHandler(...indices) {
-        let parent = locateParent(...indices);
+        const parent = locateParent(...indices);
         const targetIndex = indices[indices.length - 1];
         parent.d = [
           ...parent.d.slice(0, targetIndex + 1),
@@ -142,7 +142,7 @@
       }
 
       function itemDelete(...indices) {
-        let parent = locateParent(...indices);
+        const parent = locateParent(...indices);
         const targetIndex = indices[indices.length - 1];
         const target = parent.d[targetIndex];
 
@@ -164,12 +164,31 @@
         rerenderList();
       }
 
+      function itemMoveLeftHandler(...indices) {
+        if (indices.length < 2) {
+          return;
+        }
+        const target = locateItem(...indices);
+        const grandParent = locateItem(...indices.slice(0, indices.length - 2));
+        const parentIndex = indices[indices.length - 2];
+
+        grandParent.d = [
+          ...grandParent.d.slice(0, parentIndex + 1),
+          target,
+          ...grandParent.d.slice(parentIndex + 1),
+        ];
+        itemDelete(...indices);
+
+        serializeData(`Move left "${target.t}"`);
+        rerenderList();
+      }
+
       function itemMoveRightHandler(...indices) {
         const targetIndex = indices[indices.length - 1];
         if (targetIndex === 0) {
           return;
         }
-        let target = locateItem(...indices);
+        const target = locateItem(...indices);
 
         const previousSibling = locateItem(
           ...[...indices.slice(0, indices.length - 1), targetIndex - 1]
@@ -248,22 +267,18 @@
           const upButtonEl = document.createElement("span");
           upButtonEl.classList.add("itemButton", "upButton");
           upButtonEl.textContent = "⬆️";
-          upButtonEl.addEventListener("click", (event) => {
-            itemDeleteHandler(...parentIndices, i);
-          });
+          upButtonEl.addEventListener("click", (event) => {});
 
           const downButtonEl = document.createElement("span");
           downButtonEl.classList.add("itemButton", "downButton");
           downButtonEl.textContent = "⬇️";
-          downButtonEl.addEventListener("click", (event) => {
-            itemDeleteHandler(...parentIndices, i);
-          });
+          downButtonEl.addEventListener("click", (event) => {});
 
           const leftButtonEl = document.createElement("span");
           leftButtonEl.classList.add("itemButton", "leftButton");
           leftButtonEl.textContent = "⬅️";
           leftButtonEl.addEventListener("click", (event) => {
-            itemDeleteHandler(...parentIndices, i);
+            itemMoveLeftHandler(...parentIndices, i);
           });
 
           const rightButtonEl = document.createElement("span");
