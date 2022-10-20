@@ -65,11 +65,24 @@
         window.history.pushState({}, "", "/" + btoa(JSON.stringify(data)));
       }
 
-      function checkboxClickedHandler(value, ...indices) {
+      function locateItem(...indices) {
         let target = data;
         for (const i of indices) {
           target = target.d[i];
         }
+        return target;
+      }
+
+      function locateParent(...indices) {
+        let parent = data;
+        for (const i of indices.slice(0, indices.length - 1)) {
+          parent = parent.d[i];
+        }
+        return parent;
+      }
+
+      function checkboxClickedHandler(value, ...indices) {
+        let target = locateItem(...indices);
         target.c = value ? 1 : 0;
 
         serializeData(`${value ? "Tick" : "Untick"} "${target.t}"`);
@@ -77,10 +90,7 @@
       }
 
       function itemTitleBluredHandler(value, ...indices) {
-        let target = data;
-        for (const i of indices) {
-          target = target.d[i];
-        }
+        let target = locateItem(...indices);
         if (target.t === value) {
           return;
         }
@@ -90,32 +100,58 @@
         rerenderList();
       }
 
-      function addChildButtonHandler(...indices) {
-        let target = data;
-        for (const i of indices) {
-          target = target.d[i];
-        }
+      function selectAddedItem(element, placeHolderText) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.setStart(element.childNodes[0], 0);
+        range.setEnd(element.childNodes[0], placeHolderText.length);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
 
+      function addChildButtonHandler(...indices) {
+        let target = locateItem(...indices);
         target.d = (target.d || []).concat([{ c: 0, t: "__" }]);
 
         serializeData(`Added`);
         rerenderList();
+        const addedElement = document.getElementById(
+          `item-title-${[...indices, target.d.length - 1].join()}`
+        );
+        selectAddedItem(addedElement, "__");
+      }
+
+      function addNextSiblingHandler(...indices) {
+        let parent = locateParent(...indices);
+        const targetIndex = indices[indices.length - 1];
+        parent.d = [
+          ...parent.d.slice(0, targetIndex + 1),
+          { c: 0, t: "__" },
+          ...parent.d.slice(targetIndex + 1),
+        ];
+
+        serializeData(`Added`);
+        rerenderList();
+        const addedElement = document.getElementById(
+          `item-title-${[
+            ...indices.slice(0, indices.length - 1),
+            targetIndex + 1,
+          ].join()}`
+        );
+        selectAddedItem(addedElement, "__");
       }
 
       function itemDelete(...indices) {
-        let container = data;
-        for (const i of indices.slice(0, indices.length - 1)) {
-          container = container.d[i];
-        }
+        let parent = locateParent(...indices);
         const targetIndex = indices[indices.length - 1];
-        const target = container.d[targetIndex];
+        const target = parent.d[targetIndex];
 
-        container.d = [
-          ...container.d.slice(0, targetIndex),
-          ...container.d.slice(targetIndex + 1),
+        parent.d = [
+          ...parent.d.slice(0, targetIndex),
+          ...parent.d.slice(targetIndex + 1),
         ];
-        if (container.d.length === 0) {
-          delete container.d;
+        if (parent.d.length === 0) {
+          delete parent.d;
         }
 
         return target;
@@ -161,6 +197,7 @@
           const titleEL = document.createElement("div");
           titleEL.contentEditable = true;
           titleEL.textContent = entry.t;
+          titleEL.id = `item-title-${[...parentIndices, i].join()}`;
           titleEL.style = `opacity: ${entry.c === 1 ? 0.4 : 1}`;
           titleEL.addEventListener("blur", (event) => {
             itemTitleBluredHandler(
@@ -168,6 +205,12 @@
               ...parentIndices,
               i
             );
+          });
+          titleEL.addEventListener("input", (event) => {
+            if (event.inputType === "insertLineBreak") {
+              titleEL.blur();
+              addNextSiblingHandler(...parentIndices, i);
+            }
           });
 
           const addChildButtonEl = document.createElement("span");
