@@ -125,12 +125,12 @@
 
       function addChildButtonHandler(...indices) {
         const target = locateItem(...indices);
-        target.d = (target.d || []).concat([{ c: 0, t: "__" }]);
+        target.d = [{ c: 0, t: "__" }].concat(target.d || []);
 
         serializeData(`Added`);
         rerenderList();
         const addedElement = document.getElementById(
-          `item-title-${[...indices, target.d.length - 1].join()}`
+          `item-title-${[...indices, 0].join()}`
         );
         selectAddedItem(addedElement, "__");
       }
@@ -164,7 +164,7 @@
           ...parent.d.slice(0, targetIndex),
           ...parent.d.slice(targetIndex + 1),
         ];
-        if (parent.d.length === 0) {
+        if (parent.d.length === 0 && parent != data) {
           delete parent.d;
         }
 
@@ -352,9 +352,19 @@
             }
           });
 
+          const addNextSiblingButtonEl = document.createElement("span");
+          addNextSiblingButtonEl.classList.add(
+            "item-button",
+            "add-next-sibling-button"
+          );
+          addNextSiblingButtonEl.textContent = "➕";
+          addNextSiblingButtonEl.addEventListener("click", (event) => {
+            addNextSiblingHandler(...parentIndices, i);
+          });
+
           const addChildButtonEl = document.createElement("span");
           addChildButtonEl.classList.add("item-button", "add-child-button");
-          addChildButtonEl.textContent = "➕";
+          addChildButtonEl.textContent = "↪️";
           addChildButtonEl.addEventListener("click", (event) => {
             addChildButtonHandler(...parentIndices, i);
           });
@@ -397,6 +407,7 @@
           itemEl.appendChild(dragEl);
           itemEl.appendChild(checkboxEl);
           itemEl.appendChild(titleEL);
+          itemEl.appendChild(addNextSiblingButtonEl);
           itemEl.appendChild(addChildButtonEl);
           itemEl.appendChild(deleteButtonEl);
           itemEl.appendChild(upButtonEl);
@@ -429,7 +440,7 @@
         topLevelPlusButtonEl.classList.add("top-level-plus-button");
         topLevelPlusButtonEl.textContent = "➕";
         topLevelPlusButtonEl.addEventListener("click", (event) => {
-          addChildButtonHandler();
+          addNextSiblingHandler(data.d.length - 1);
         });
         document.getElementById("root").appendChild(topLevelPlusButtonEl);
       }
@@ -511,8 +522,11 @@
       .item-button:hover {
         opacity: 1;
       }
-      .add-child-button {
+      .add-next-sibling-button {
         margin-left: 1.5em;
+      }
+      .add-child-button {
+        margin-left: 1em;
       }
       .delete-button {
         margin-left: 1em;
