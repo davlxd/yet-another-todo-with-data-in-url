@@ -259,7 +259,7 @@
         titleEL.textContent = data.t;
         titleEL.classList.add("todotitle");
         titleEL.addEventListener("blur", (event) => {
-          itemTitleBluredHandler(event.target.textContent);
+          itemTitleBluredHandler(event.target.innerText);
         });
         document.getElementById("root").appendChild(titleEL);
       }
@@ -284,22 +284,16 @@
           });
 
           const titleEL = document.createElement("div");
+          titleEL.classList.add("itemTitle");
           titleEL.contentEditable = true;
           titleEL.textContent = entry.t;
           titleEL.id = `item-title-${[...parentIndices, i].join()}`;
           titleEL.style = `opacity: ${entry.c === 1 ? 0.4 : 1}`;
           titleEL.addEventListener("blur", (event) => {
-            itemTitleBluredHandler(
-              event.target.textContent,
-              ...parentIndices,
-              i
-            );
+            itemTitleBluredHandler(event.target.innerText, ...parentIndices, i);
           });
           titleEL.addEventListener("input", (event) => {
             switch (event.inputType) {
-              case "insertParagraph":
-                titleEL.blur();
-                break;
               case "insertLineBreak": // Shift + Enter triggers this
                 titleEL.blur();
                 addNextSiblingHandler(...parentIndices, i);
@@ -427,6 +421,9 @@
       }
       .checkbox {
         margin-right: 0.5em;
+      }
+      .itemTitle {
+        white-space: pre;
       }
       .itemButton {
         cursor: pointer;
