@@ -253,6 +253,49 @@
         rerenderList();
       }
 
+      function itemBeingDroppedHandler(sourceIndicesStr, ...indices) {
+        let target = locateItem(...indices);
+        target.target = true; // mark target
+
+        const sourceIndicies = sourceIndicesStr
+          .split(",")
+          .map((i) => parseInt(i));
+        const dragged = itemDelete(...sourceIndicies);
+
+        function findTarget(list, ...indices) {
+          if (list.target) {
+            return [indices, list];
+          }
+          const children = list.d || [];
+          for (let i = 0; i < children.length; i++) {
+            const ret = findTarget(children[i], ...indices, i);
+            if (ret) {
+              return ret;
+            }
+          }
+        }
+        [targetIndices, target] = findTarget(data);
+        delete target.target;
+
+        if (target.d) {
+          target.d = [dragged, ...target.d];
+        } else {
+          const targetIndex = targetIndices[targetIndices.length - 1];
+          let container = data;
+          for (const i of targetIndices.slice(0, targetIndices.length - 1)) {
+            container = container.d[i];
+          }
+          container.d = [
+            ...container.d.slice(0, targetIndex + 1),
+            dragged,
+            ...container.d.slice(targetIndex + 1),
+          ];
+        }
+
+        serializeData(`Dragged "${dragged.t}"`);
+        rerenderList();
+      }
+
       function renderTodoTitle() {
         const titleEL = document.createElement("div");
         titleEL.contentEditable = true;
@@ -273,6 +316,14 @@
           itemEl.style = `padding-left: ${
             parentIndices.length * 2
           }em; margin-top: ${2 / Math.pow(2, parentIndices.length + 1)}em;`;
+
+          const dragEl = document.createElement("span");
+          dragEl.classList.add("dragIcon");
+          dragEl.setAttribute("draggable", "true");
+          dragEl.textContent = "≣";
+          dragEl.addEventListener("dragstart", (event) => {
+            event.dataTransfer.setData("text", [...parentIndices, i].join());
+          });
 
           const checkboxEl = document.createElement("input");
           checkboxEl.type = "checkbox";
@@ -343,6 +394,7 @@
             itemMoveRightHandler(...parentIndices, i);
           });
 
+          itemEl.appendChild(dragEl);
           itemEl.appendChild(checkboxEl);
           itemEl.appendChild(titleEL);
           itemEl.appendChild(addChildButtonEl);
@@ -351,6 +403,21 @@
           itemEl.appendChild(downButtonEl);
           itemEl.appendChild(leftButtonEl);
           itemEl.appendChild(rightButtonEl);
+          itemEl.addEventListener("drop", (event) => {
+            itemBeingDroppedHandler(
+              event.dataTransfer.getData("text"),
+              ...parentIndices,
+              i
+            );
+          });
+          itemEl.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            itemEl.classList.add("borderBottomed");
+          });
+          itemEl.addEventListener("dragleave", (event) => {
+            itemEl.classList.remove("borderBottomed");
+          });
+
           document.getElementById("root").appendChild(itemEl);
 
           renderList(entry.d, ...parentIndices, i);
@@ -418,6 +485,17 @@
       .list-entry {
         display: flex;
         align-items: center;
+      }
+      .borderBottomed {
+        border-bottom: 1px solid black;
+      }
+      .dragIcon {
+        margin-right: 0.5em;
+        cursor: grab;
+        opacity: 0.1;
+      }
+      .dragIcon:hover {
+        opacity: 1;
       }
       .checkbox {
         margin-right: 0.5em;
