@@ -65,7 +65,7 @@
 
       // Base64 data, save to URL
       function serializeData(action) {
-        document.title = `${data.t} -  ${action}`;
+        document.title = `${data.t} ― ${action}`; // it's not dash it's U+2015, ff plug in will reverse engineer to get it
 
         const string = JSON.stringify(data);
         const codeUnits = new Uint16Array(string.length);
