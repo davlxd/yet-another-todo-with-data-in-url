@@ -178,6 +178,18 @@
         rerenderList();
       }
 
+      function itemblockToggleHandler(...indices) {
+        const target = locateItem(...indices);
+        if ("b" in target) {
+          delete target.b;
+          serializeData(`Unblock "${target.t}"`);
+        } else {
+          target.b = [];
+          serializeData(`Block "${target.t}"`);
+        }
+        rerenderList();
+      }
+
       function itemMoveUpHandler(...indices) {
         const targetIndex = indices[indices.length - 1];
 
@@ -307,6 +319,8 @@
         document.getElementById("root").appendChild(titleEL);
       }
 
+      const DONE_OPACITY = 0.2;
+      const BLOCKED_OPACITY = 0.3;
       // Resursive function to render todo list and children
       function renderList(list = [], ...parentIndices) {
         for (let i = 0; i < list.length; i++) {
@@ -328,7 +342,7 @@
           const checkboxEl = document.createElement("input");
           checkboxEl.type = "checkbox";
           checkboxEl.checked = entry.c === 1;
-          checkboxEl.style = `opacity: ${entry.c === 1 ? 0.4 : 1}`;
+          checkboxEl.style = `opacity: ${entry.c === 1 ? DONE_OPACITY : 1}`;
           checkboxEl.classList.add("checkbox");
           checkboxEl.addEventListener("change", (event) => {
             checkboxClickedHandler(event.target.checked, ...parentIndices, i);
@@ -339,7 +353,13 @@
           titleEL.contentEditable = true;
           titleEL.textContent = entry.t;
           titleEL.id = `item-title-${[...parentIndices, i].join()}`;
-          titleEL.style = `opacity: ${entry.c === 1 ? 0.4 : 1}`;
+          titleEL.style = `opacity: ${
+            entry.c === 1 ? DONE_OPACITY : "b" in entry ? BLOCKED_OPACITY : 1
+          } ; font-weight: ${
+            "b" in entry && entry.c !== 1 ? "1000" : "normal"
+          } ; text-shadow: ${
+            "b" in entry && entry.c !== 1 ? "1px 0px" : "0px 0px"
+          }`;
           titleEL.addEventListener("blur", (event) => {
             itemTitleBluredHandler(event.target.innerText, ...parentIndices, i);
           });
@@ -376,6 +396,16 @@
             itemDeleteHandler(...parentIndices, i);
           });
 
+          const blockButtonEl = document.createElement("span");
+          blockButtonEl.classList.add("item-button", "block-button");
+          blockButtonEl.style = `opacity: ${
+            "b" in entry ? BLOCKED_OPACITY + 0.2 : 0.1
+          }`;
+          blockButtonEl.textContent = "⛔";
+          blockButtonEl.addEventListener("click", (event) => {
+            itemblockToggleHandler(...parentIndices, i);
+          });
+
           const upButtonEl = document.createElement("span");
           upButtonEl.classList.add("item-button", "up-button");
           upButtonEl.textContent = "⬆️";
@@ -410,6 +440,7 @@
           itemEl.appendChild(addNextSiblingButtonEl);
           itemEl.appendChild(addChildButtonEl);
           itemEl.appendChild(deleteButtonEl);
+          itemEl.appendChild(blockButtonEl);
           itemEl.appendChild(upButtonEl);
           itemEl.appendChild(downButtonEl);
           itemEl.appendChild(leftButtonEl);
@@ -529,6 +560,9 @@
         margin-left: 1em;
       }
       .delete-button {
+        margin-left: 1em;
+      }
+      .block-button {
         margin-left: 1em;
       }
       .up-button {
