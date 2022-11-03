@@ -334,6 +334,7 @@
           const dragEl = document.createElement("span");
           dragEl.classList.add("drag-icon");
           dragEl.setAttribute("draggable", "true");
+          dragEl.setAttribute("title", "Drag this entry to move up or down");
           dragEl.textContent = "≣";
           dragEl.addEventListener("dragstart", (event) => {
             event.dataTransfer.setData("text", [...parentIndices, i].join());
@@ -377,6 +378,10 @@
             "item-button",
             "add-next-sibling-button"
           );
+          addNextSiblingButtonEl.setAttribute(
+            "title",
+            "Add an entry below (same level)"
+          );
           addNextSiblingButtonEl.textContent = "➕";
           addNextSiblingButtonEl.addEventListener("click", (event) => {
             addNextSiblingHandler(...parentIndices, i);
@@ -384,6 +389,7 @@
 
           const addChildButtonEl = document.createElement("span");
           addChildButtonEl.classList.add("item-button", "add-child-button");
+          addChildButtonEl.setAttribute("title", "Prepend a child entry");
           addChildButtonEl.textContent = "↪️";
           addChildButtonEl.addEventListener("click", (event) => {
             addChildButtonHandler(...parentIndices, i);
@@ -391,6 +397,10 @@
 
           const deleteButtonEl = document.createElement("span");
           deleteButtonEl.classList.add("item-button", "delete-button");
+          deleteButtonEl.setAttribute(
+            "title",
+            "Delete this and all descendant entries"
+          );
           deleteButtonEl.textContent = "🗑️";
           deleteButtonEl.addEventListener("click", (event) => {
             itemDeleteHandler(...parentIndices, i);
@@ -398,6 +408,7 @@
 
           const blockButtonEl = document.createElement("span");
           blockButtonEl.classList.add("item-button", "block-button");
+          blockButtonEl.setAttribute("title", "Mark this entry as blocked");
           blockButtonEl.style = `opacity: ${
             "b" in entry ? BLOCKED_OPACITY + 0.2 : 0.1
           }`;
@@ -408,6 +419,7 @@
 
           const upButtonEl = document.createElement("span");
           upButtonEl.classList.add("item-button", "up-button");
+          upButtonEl.setAttribute("title", "Move this entry above");
           upButtonEl.textContent = "⬆️";
           upButtonEl.addEventListener("click", (event) => {
             itemMoveUpHandler(...parentIndices, i);
@@ -415,6 +427,7 @@
 
           const downButtonEl = document.createElement("span");
           downButtonEl.classList.add("item-button", "down-button");
+          downButtonEl.setAttribute("title", "Move this entry down");
           downButtonEl.textContent = "⬇️";
           downButtonEl.addEventListener("click", (event) => {
             itemMoveDownHandler(...parentIndices, i);
@@ -422,6 +435,10 @@
 
           const leftButtonEl = document.createElement("span");
           leftButtonEl.classList.add("item-button", "left-button");
+          leftButtonEl.setAttribute(
+            "title",
+            "Bring this entry up to parent level"
+          );
           leftButtonEl.textContent = "⬅️";
           leftButtonEl.addEventListener("click", (event) => {
             itemMoveLeftHandler(...parentIndices, i);
@@ -429,6 +446,10 @@
 
           const rightButtonEl = document.createElement("span");
           rightButtonEl.classList.add("item-button", "right-button");
+          rightButtonEl.setAttribute(
+            "title",
+            "Bring this entry down to children level"
+          );
           rightButtonEl.textContent = "➡️";
           rightButtonEl.addEventListener("click", (event) => {
             itemMoveRightHandler(...parentIndices, i);
