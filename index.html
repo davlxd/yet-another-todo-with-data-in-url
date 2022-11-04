@@ -10,6 +10,7 @@
   </head>
   <body>
     <div id="root" style="display: flex; flex-direction: column"></div>
+    <div id="export-to-clipboard-button"></div>
     <script type="text/javascript">
       // Single Page Apps for GitHub Pages
       // MIT License
@@ -42,7 +43,6 @@
       // default data
       let data = {
         t: "Example",
-        _: { t: "Example list" },
         d: [
           { c: 1, t: "example entry 1" },
           {
@@ -319,6 +319,27 @@
         document.getElementById("root").appendChild(titleEL);
       }
 
+      function exportToClipboardHandler() {
+        const INDENT_SPACES = 4;
+        let str = data.t + "\n\n";
+
+        function dft(children, indent) {
+          for (const child of children) {
+            str += `${" ".repeat(INDENT_SPACES * indent)}`;
+            str += `[${child.c === 1 ? "x" : " "}] `;
+            str += child.t;
+            str += `${"b" in child ? " (blocked)" : ""}\n`;
+            if (child.d && child.d.length > 0) {
+              dft(child.d, indent + 1);
+            }
+          }
+        }
+        dft(data.d, 0);
+
+        str += "\n";
+        navigator.clipboard.writeText(str);
+      }
+
       const DONE_OPACITY = 0.2;
       const BLOCKED_OPACITY = 0.3;
       // Resursive function to render todo list and children
@@ -507,6 +528,30 @@
         renderTopLevelPlusSign();
       }
 
+      function renderExportToClipboardButton() {
+        const exportToClipboardButton = document.getElementById(
+          "export-to-clipboard-button"
+        );
+        exportToClipboardButton.textContent = "⎘";
+        exportToClipboardButton.setAttribute(
+          "title",
+          "Export this Todo list to clipboard"
+        );
+        exportToClipboardButton.addEventListener("click", (event) => {
+          exportToClipboardHandler();
+        });
+      }
+
+      function rerenderList() {
+        const myNode = document.getElementById("root");
+        while (myNode.firstChild) {
+          myNode.removeChild(myNode.lastChild);
+        }
+        renderTodoTitle();
+        renderList(data.d);
+        renderTopLevelPlusSign();
+      }
+
       // Initial load, take base64 data form URL, parse and assign to global data
       // If none, do nothing, leave default data value intact
       // Then invoke initialRender
@@ -530,6 +575,8 @@
           }
         }
         rerenderList();
+
+        renderExportToClipboardButton();
       }
 
       initLoadFromUrl();
@@ -604,6 +651,17 @@
         cursor: pointer;
         font-size: 1.7em;
         opacity: 0.3;
+      }
+      #export-to-clipboard-button {
+        position: fixed;
+        top: 0.2em;
+        right: 0.4em;
+        cursor: pointer;
+        font-size: 2.5em;
+        opacity: 0.3;
+      }
+      #export-to-clipboard-button:hover {
+        opacity: 1;
       }
     </style>
   </body>
