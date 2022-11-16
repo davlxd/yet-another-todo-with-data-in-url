@@ -341,7 +341,7 @@
       }
 
       const DONE_OPACITY = 0.2;
-      const BLOCKED_OPACITY = 0.3;
+      const BLOCKED_OPACITY = 0.4;
       // Resursive function to render todo list and children
       function renderList(list = [], ...parentIndices) {
         for (let i = 0; i < list.length; i++) {
@@ -431,7 +431,7 @@
           blockButtonEl.classList.add("item-button", "block-button");
           blockButtonEl.setAttribute("title", "Mark this entry as blocked");
           blockButtonEl.style = `opacity: ${
-            "b" in entry ? BLOCKED_OPACITY + 0.2 : 0.1
+            "b" in entry ? BLOCKED_OPACITY + 0.2 : 0.3
           }`;
           blockButtonEl.textContent = "⛔";
           blockButtonEl.addEventListener("click", (event) => {
@@ -615,7 +615,7 @@
       }
       .item-button {
         cursor: pointer;
-        opacity: 0.1;
+        opacity: 0.3;
         filter: grayscale(100%);
       }
       .item-button:hover {
