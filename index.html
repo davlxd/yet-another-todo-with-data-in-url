@@ -264,7 +264,11 @@
         rerenderList();
       }
 
-      function itemBeingDroppedHandler(sourceIndicesStr, ...indices) {
+      function itemBeingDroppedHandler(
+        sourceIndicesStr,
+        beforeOrNot,
+        ...indices
+      ) {
         let target = locateItem(...indices);
         target.target = true; // mark target
 
@@ -288,7 +292,7 @@
         [targetIndices, target] = findTarget(data);
         delete target.target;
 
-        if (target.d) {
+        if (target.d && !beforeOrNot) {
           target.d = [dragged, ...target.d];
         } else {
           const targetIndex = targetIndices[targetIndices.length - 1];
@@ -296,11 +300,20 @@
           for (const i of targetIndices.slice(0, targetIndices.length - 1)) {
             container = container.d[i];
           }
-          container.d = [
-            ...container.d.slice(0, targetIndex + 1),
-            dragged,
-            ...container.d.slice(targetIndex + 1),
-          ];
+
+          if (beforeOrNot) {
+            container.d = [
+              ...container.d.slice(0, targetIndex),
+              dragged,
+              ...container.d.slice(targetIndex),
+            ];
+          } else {
+            container.d = [
+              ...container.d.slice(0, targetIndex + 1),
+              dragged,
+              ...container.d.slice(targetIndex + 1),
+            ];
+          }
         }
 
         serializeData(`Dragged "${dragged.t}"`);
@@ -487,18 +500,33 @@
           itemEl.appendChild(leftButtonEl);
           itemEl.appendChild(rightButtonEl);
           itemEl.addEventListener("drop", (event) => {
+            const targetBoundingBox = event.target.getBoundingClientRect();
             itemBeingDroppedHandler(
               event.dataTransfer.getData("text"),
+              event.clientY <=
+                (targetBoundingBox.top + targetBoundingBox.bottom) / 2,
               ...parentIndices,
               i
             );
           });
           itemEl.addEventListener("dragover", (event) => {
             event.preventDefault();
-            itemEl.classList.add("border-bottomed");
+            const targetBoundingBox = event.target.getBoundingClientRect();
+
+            if (
+              event.clientY <=
+              (targetBoundingBox.top + targetBoundingBox.bottom) / 2
+            ) {
+              itemEl.classList.remove("border-bottomed");
+              itemEl.classList.add("border-topped");
+            } else {
+              itemEl.classList.remove("border-topped");
+              itemEl.classList.add("border-bottomed");
+            }
           });
           itemEl.addEventListener("dragleave", (event) => {
             itemEl.classList.remove("border-bottomed");
+            itemEl.classList.remove("border-topped");
           });
 
           document.getElementById("root").appendChild(itemEl);
@@ -594,6 +622,9 @@
       .list-entry {
         display: flex;
         align-items: center;
+      }
+      .border-topped {
+        border-top: 1px solid black;
       }
       .border-bottomed {
         border-bottom: 1px solid black;
