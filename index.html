@@ -431,7 +431,7 @@
           blockButtonEl.classList.add("item-button", "block-button");
           blockButtonEl.setAttribute("title", "Mark this entry as blocked");
           blockButtonEl.style = `opacity: ${
-            "b" in entry ? BLOCKED_OPACITY + 0.2 : 0.3
+            "b" in entry ? BLOCKED_OPACITY + 0.2 : 0.2
           }`;
           blockButtonEl.textContent = "⛔";
           blockButtonEl.addEventListener("click", (event) => {
@@ -615,7 +615,7 @@
       }
       .item-button {
         cursor: pointer;
-        opacity: 0.3;
+        opacity: 0.2;
         filter: grayscale(100%);
       }
       .item-button:hover {
