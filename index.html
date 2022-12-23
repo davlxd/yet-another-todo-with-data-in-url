@@ -596,6 +596,7 @@
             );
 
             data = JSON.parse(string);
+            document.title = data.t;
           } catch (e) {
             console.error("Unable to load data", e);
             return;
